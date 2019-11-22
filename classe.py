@@ -16,6 +16,11 @@ class CurrencyConverter(QDialog):
     value2 = None
     device1 = 'EUR'
     devise2 = 'USD'
+    device1_select = None
+    device2_select = None
+    device1_input = None
+    device2_input = None
+    device_invert = None
 
     def __init__(self, parent = None):
         super(CurrencyConverter, self).__init__(parent)
@@ -38,12 +43,12 @@ class CurrencyConverter(QDialog):
         devise2 = self.device2_select.currentText()
         value1 = self.device1_input.text()
         value2 = self.device2_input.text()
-        value1 = parseToFloat(value1, 0)
-        value2 = parseToFloat(value2, 0)
+        value1 = parseToFloat(value1, '')
+        value2 = parseToFloat(value2, '')
 
         if action == 'UPDATE_INPUT_1' and (force or value1 != parseToFloat(self.value1)):
-            if value1 < 0:
-              self.device2_input.setText(str(0.0))
+            if value1 < 0 or value1 == '':
+              self.device2_input.setText(str(''))
               return
 
             nextValue = parseToFloat(self.c.convert(value1, device1, devise2))
@@ -52,8 +57,8 @@ class CurrencyConverter(QDialog):
             self.device2_input.setText(str(nextValue))
 
         if action == 'UPDATE_INPUT_2' and (force or value2 != parseToFloat(self.value2)):
-            if value2 < 0:
-              self.device1_input.setText(str(0.0))
+            if value2 < 0 or value2 == '':
+              self.device1_input.setText(str(''))
               return
 
             nextValue = parseToFloat(self.c.convert(value2, devise2, device1))
