@@ -1,4 +1,3 @@
-
 start:
 	python3 main.py
 
@@ -10,3 +9,6 @@ activate:
 
 deactivate:
 	deactivate
+
+venv:
+	python3 -m venv venv

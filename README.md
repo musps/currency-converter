@@ -1,5 +1,23 @@
 # Convertisseur de devises
 
+### Installation
+
+```
+# Création du venv
+make venv
+# Actiivation du venv
+make activate
+# Installation des dépendences
+make install
+```
+
+### Démarrer l'application
+```
+make start
+```
+
+### Notation 
+
 ```
   > Création de l'environnement virtuel
   > Install packages (pySide2, CurrencyConverter)
