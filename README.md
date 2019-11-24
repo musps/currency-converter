@@ -1,7 +1,17 @@
 # Convertisseur de devises
 
-### Installation
+Cette application est un convertisseur de devices.
 
+![enter image description here](https://raw.githubusercontent.com/musps/currency-converter/master/screenshot.png)
+
+### Pré-requis
+* Avoir `python version 3.0.0` installé sur sa machine.
+
+### Librairie utilisées 
+- CurrencyConverter
+- PySide2
+
+### Installation
 ```
 # Création du venv
 make venv
