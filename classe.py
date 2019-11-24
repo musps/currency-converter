@@ -134,7 +134,7 @@ class CurrencyConverter(QDialog):
               self.targetCurrency['input'].setText(str(''))
               return
 
-            nextValue = parseToFloat(self.c.convert(amount1, currency1, currency2))
+            nextValue = parseToFloat(self.convert(amount1, currency1, currency2))
             self.currentCurrency['amount'] = amount1
             self.targetCurrency['amount'] = nextValue
             self.targetCurrency['input'].setText(str(nextValue))
@@ -144,7 +144,7 @@ class CurrencyConverter(QDialog):
               self.currentCurrency['input'].setText(str(''))
               return
 
-            nextValue = parseToFloat(self.c.convert(amount2, currency2, currency1))
+            nextValue = parseToFloat(self.convert(amount2, currency2, currency1))
             self.targetCurrency['amount'] = amount2
             self.currentCurrency['amount'] = nextValue
             self.currentCurrency['input'].setText(str(nextValue))

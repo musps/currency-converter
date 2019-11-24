@@ -14,16 +14,18 @@ Cette application est un convertisseur de devices.
 ### Installation
 ```
 # Création du venv
-make venv
+python3 -m venv venv
+
 # Actiivation du venv
-make activate
+source venv/bin/activate
+
 # Installation des dépendences
-make install
+pip install -r requirements.txt
 ```
 
 ### Démarrer l'application
 ```
-make start
+python3 main.py
 ```
 
 ### Gestion
