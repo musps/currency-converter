@@ -1,4 +1,4 @@
-from currency_converter import CurrencyConverter
+from currency_converter import RateNotFoundError, CurrencyConverter as CurrencyConverter_
 from PySide2 import QtCore
 from PySide2.QtWidgets import QDialog, QLineEdit, QPushButton, QHBoxLayout, QComboBox
 
@@ -9,26 +9,93 @@ def parseToFloat(value, valueOnError = None):
         return valueOnError
 
 class CurrencyConverter(QDialog):
-    c = CurrencyConverter()
-    ui_max_width = 150
+    c = CurrencyConverter_()
+    config = {
+      'title': 'Convertisseur de devises',
+      'bgColor': '#333',
+      'uiColor': '#FFFFFF',
+      'uiMaxWidth': 150,
+      'width': 800,
+      'height': 220,
+    }
     currencies = []
-    value1 = 1
-    value2 = None
-    device1 = 'EUR'
-    devise2 = 'USD'
-    device1_select = None
-    device2_select = None
-    device1_input = None
-    device2_input = None
-    device_invert = None
+    buttonInverter = None
+    currentCurrency = {
+      'amount': 1,
+      'code': 'EUR',
+      'input': None,
+      'select': None,
+    }
+    targetCurrency = {
+      'amount': None,
+      'code': 'USD',
+      'input': None,
+      'select': None,
+    }
 
     def __init__(self, parent = None):
         super(CurrencyConverter, self).__init__(parent)
-        self.setWindowTitle('Convertisseur de devises')
-        self.setStyleSheet('background-color: #333;')
-        self.setMinimumSize(800, 220)
+        self.setWindowTitle(self.config['title'])
+        self.setStyleSheet(''.join(['background-color:', self.config['bgColor'], ';']))
+        self.setMinimumSize(self.config['width'], self.config['height'])
         self.initCurrencies()
         self.addForm()
+
+    def addForm(self):
+        layout = QHBoxLayout()
+        '''
+        Instanciation des UI
+        '''
+        self.currentCurrency['input'] = QLineEdit()
+        self.currentCurrency['select'] = QComboBox()
+        self.targetCurrency['input'] = QLineEdit()
+        self.targetCurrency['select'] = QComboBox()
+        self.buttonInverter = QPushButton('Inverser devises')
+
+        '''
+        Modification du style
+        '''
+        self.currentCurrency['input'].setFixedWidth(self.config['uiMaxWidth'])
+        self.currentCurrency['select'].setFixedWidth(self.config['uiMaxWidth'])
+        self.targetCurrency['input'].setFixedWidth(self.config['uiMaxWidth'])
+        self.targetCurrency['select'].setFixedWidth(self.config['uiMaxWidth'])
+        self.buttonInverter.setFixedWidth(self.config['uiMaxWidth'])
+
+        colorStyle = ''.join(['color:', self.config['uiColor'], ';'])
+        self.currentCurrency['input'].setStyleSheet(colorStyle)
+        self.currentCurrency['select'].setStyleSheet(colorStyle)
+        self.targetCurrency['input'].setStyleSheet(colorStyle)
+        self.targetCurrency['select'].setStyleSheet(colorStyle)
+        self.buttonInverter.setStyleSheet(colorStyle)
+
+        '''
+        Ajout des données
+        '''
+        self.currentCurrency['select'].addItems(self.currencies)
+        self.targetCurrency['select'].addItems(self.currencies)
+        self.initDefaultCurrency(self.currentCurrency['select'], self.currentCurrency['code'])
+        self.initDefaultCurrency(self.targetCurrency['select'], self.targetCurrency['code'])
+        self.currentCurrency['input'].setText(str(self.currentCurrency['amount']))
+        self.initDefaultValues()
+
+        '''
+        Ajout des évènements
+        '''
+        self.currentCurrency['select'].currentIndexChanged.connect(self.onCurrentCurrencyChange)
+        self.targetCurrency['select'].currentIndexChanged.connect(self.onTargetCurrencyChange)
+        self.currentCurrency['input'].textChanged.connect(self.onCurrentAmountChange)
+        self.targetCurrency['input'].textChanged.connect(self.onTargetAmountChange)
+        self.buttonInverter.clicked.connect(self.onClickInverter)
+
+        '''
+        Ajout des éléments à l'interface
+        '''
+        layout.addWidget(self.currentCurrency['select'])
+        layout.addWidget(self.currentCurrency['input'])
+        layout.addWidget(self.targetCurrency['select'])
+        layout.addWidget(self.targetCurrency['input'])
+        layout.addWidget(self.buttonInverter)
+        self.setLayout(layout)
 
     def initCurrencies(self):
         self.currencies = sorted(self.c.currencies)
@@ -38,107 +105,64 @@ class CurrencyConverter(QDialog):
         if index >= 0:
             selec.setCurrentIndex(index)
 
+    def convert(self, amount, currentDevice, targetDevice):
+      result = None
+      try:
+        result = self.c.convert(amount, currentDevice, targetDevice)
+      except RateNotFoundError:
+        '''
+        impossible de convertir xx device vers xx device, cela n'est pas prit en compte pour l'instant.
+        '''
+      return result
+
     def onInputChange(self, action, force = False):
-        device1 = self.device1_select.currentText()
-        devise2 = self.device2_select.currentText()
-        value1 = self.device1_input.text()
-        value2 = self.device2_input.text()
-        value1 = parseToFloat(value1, '')
-        value2 = parseToFloat(value2, '')
+        currency1 = self.currentCurrency['select'].currentText()
+        currency2 = self.targetCurrency['select'].currentText()
+        amount1 = self.currentCurrency['input'].text()
+        amount2 = self.targetCurrency['input'].text()
+        amount1 = parseToFloat(amount1, -1)
+        amount2 = parseToFloat(amount2, -1)
 
-        if action == 'UPDATE_INPUT_1' and (force or value1 != parseToFloat(self.value1)):
-            if value1 < 0 or value1 == '':
-              self.device2_input.setText(str(''))
+        if action == 'INVERTER':
+            self.initDefaultCurrency(self.currentCurrency['select'], currency2)
+            self.initDefaultCurrency(self.targetCurrency['select'], currency1)
+            self.currentCurrency['input'].setText(str(amount2))
+            self.targetCurrency['input'].setText(str(amount1))
+
+        if action == 'UPDATE_TARGET_AMOUNT' and (force or amount1 != parseToFloat(self.currentCurrency['amount'])):
+            if amount1 < 0:
+              self.targetCurrency['input'].setText(str(''))
               return
 
-            nextValue = parseToFloat(self.c.convert(value1, device1, devise2))
-            self.value1 = value1
-            self.value2 = nextValue
-            self.device2_input.setText(str(nextValue))
+            nextValue = parseToFloat(self.c.convert(amount1, currency1, currency2))
+            self.currentCurrency['amount'] = amount1
+            self.targetCurrency['amount'] = nextValue
+            self.targetCurrency['input'].setText(str(nextValue))
 
-        if action == 'UPDATE_INPUT_2' and (force or value2 != parseToFloat(self.value2)):
-            if value2 < 0 or value2 == '':
-              self.device1_input.setText(str(''))
+        if action == 'UPDATE_CURRENT_AMOUNT' and (force or amount2 != parseToFloat(self.targetCurrency['amount'])):
+            if amount2 < 0:
+              self.currentCurrency['input'].setText(str(''))
               return
 
-            nextValue = parseToFloat(self.c.convert(value2, devise2, device1))
-            self.value2 = value2
-            self.value1 = nextValue
-            self.device1_input.setText(str(nextValue))
-
-    def onDeviceChange(self, action, index):
-        currency = self.currencies[index]
-        if action == 'UPDATE_SELECT_1':
-            self.onInputChange('UPDATE_INPUT_2', True)
-        if action == 'UPDATE_SELECT_2':
-            self.onInputChange('UPDATE_INPUT_1', True)
+            nextValue = parseToFloat(self.c.convert(amount2, currency2, currency1))
+            self.targetCurrency['amount'] = amount2
+            self.currentCurrency['amount'] = nextValue
+            self.currentCurrency['input'].setText(str(nextValue))
 
     def initDefaultValues(self):
-        self.onInputChange('UPDATE_INPUT_1', True)
+        self.onInputChange('UPDATE_TARGET_AMOUNT', True)
 
-    def onInput1Change(self, value):
-        self.onInputChange('UPDATE_INPUT_1')
+    def onCurrentAmountChange(self):
+        self.onInputChange('UPDATE_TARGET_AMOUNT')
 
-    def onInput2Change(self, value):
-        self.onInputChange('UPDATE_INPUT_2')
+    def onTargetAmountChange(self):
+        self.onInputChange('UPDATE_CURRENT_AMOUNT')
 
-    def onDevice1Change(self, i):
-        self.onDeviceChange('UPDATE_SELECT_1', i)
+    def onCurrentCurrencyChange(self):
+        self.onInputChange('UPDATE_TARGET_AMOUNT', True)
 
-    def onDevice2Change(self, i):
-        self.onDeviceChange('UPDATE_SELECT_2', i)
+    def onTargetCurrencyChange(self):
+        self.onInputChange('UPDATE_CURRENT_AMOUNT', True)
 
-    def onClickDeviceInvert(self):
-        device1 = self.device1_select.currentText()
-        devise2 = self.device2_select.currentText()
-        value1 = self.device1_input.text()
-        value2 = self.device2_input.text()
-
-        self.initDefaultCurrency(self.device1_select, devise2)
-        self.initDefaultCurrency(self.device2_select, device1)
-        self.device1_input.setText(str(value2))
-        self.device2_input.setText(str(value1))
-
-    def addForm(self):
-        layout = QHBoxLayout()
-
-        self.device1_select = QComboBox()
-        self.device1_input = QLineEdit()
-        self.device2_select = QComboBox()
-        self.device2_input = QLineEdit()
-        self.device_invert = QPushButton('Inverser devises')
-
-        self.device_invert.clicked.connect(self.onClickDeviceInvert)
-
-        self.device1_select.setFixedWidth(self.ui_max_width)
-        self.device2_select.setFixedWidth(self.ui_max_width)
-        self.device1_select.addItems(self.currencies)
-        self.device2_select.addItems(self.currencies)
-
-        self.initDefaultCurrency(self.device1_select, self.device1)
-        self.initDefaultCurrency(self.device2_select, self.devise2)
-
-        self.device1_select.currentIndexChanged.connect(self.onDevice1Change)
-        self.device2_select.currentIndexChanged.connect(self.onDevice2Change)
-
-        self.device1_input.setFixedWidth(self.ui_max_width)
-        self.device2_input.setFixedWidth(self.ui_max_width)
-
-        self.device1_input.setText(str(self.value1))
-        self.initDefaultValues()
-
-        self.device1_input.textChanged.connect(self.onInput1Change)
-        self.device2_input.textChanged.connect(self.onInput2Change)
-
-        self.device1_select.setStyleSheet("color: white;")
-        self.device2_select.setStyleSheet("color: white;")
-        self.device1_input.setStyleSheet("color: white;")
-        self.device2_input.setStyleSheet("color: white;")
-        self.device_invert.setStyleSheet("color: white;")
-
-        layout.addWidget(self.device1_select)
-        layout.addWidget(self.device1_input)
-        layout.addWidget(self.device2_select)
-        layout.addWidget(self.device2_input)
-        layout.addWidget(self.device_invert)
-        self.setLayout(layout)
+    def onClickInverter(self):
+        self.onInputChange('INVERTER')

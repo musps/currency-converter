@@ -16,16 +16,7 @@ make install
 make start
 ```
 
-### Notation 
-
-```
-  > Création de l'environnement virtuel
-  > Install packages (pySide2, CurrencyConverter)
-  > Création de la fenêtre principale
-  > Création de l’interface
-  > Définir les valeurs par défaut
-  > Connecter les widgets aux méthodes
-  > Convertir la devise et afficher le résultat
-  > Gérer les erreurs
-  > Changer le style de l’interface
-```
+### Gestion
+- Les valeurs négative (-1) retournent vide comme résultat.
+- Si une erreur est lancée, le champ opposé aura comme résultat un champ vide.
+- Certaines devices ne peuvent pas être convertie entre elle
